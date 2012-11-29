@@ -80,6 +80,7 @@ class UserObserver {
 					}
 				}
 			} catch (Exception $e) {
+				OELog::log("Failed to refresh user {$params['username']}: ".$e->getMessage());
 				// silently return back to UserIdentity without having refreshed the user
 			}
 		}
