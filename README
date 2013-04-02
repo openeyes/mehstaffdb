@@ -2,56 +2,39 @@
 Moorfields central staff database module
 ========================================
 
-requires:
+Requires:
 
  - php5-sybase
 
-installation:
+Installation:
 
-1. ensure these lines are in [global] section of /etc/freetds/freetds.conf:
+1. Ensure these lines are in [global] section of /etc/freetds/freetds.conf:
 
 tds version = 8.0
 client charset = UTF-8
 
-2. set reasonable timeouts in /etc/freetds/freetds.conf:
+2. Set reasonable timeouts in /etc/freetds/freetds.conf:
 
 timeout = 3
 connect timeout = 3
 
-3. add these lines to the 'import' section of config/local/common.php:
+3. Add to modules list in config/local/common.php
 
-'application.modules.mehstaffdb.*',
-'application.modules.mehstaffdb.components.*',
-'application.modules.mehstaffdb.models.*',
+'modules' => array(
+	...
+	'mehstaffdb',
+	...
+),
 
-4. add a db connection called 'db_staff' to config/local/common.php with the details of your connection:
+3. Add a db connection called 'db_staff' to config/local/common.php with the details of your connection:
 
 'db_staff' => array(
-	'class'=>'CDbConnection',
 	'connectionString' => 'dblib:host=HOSTNAME;dbname=DATABASE',
 	'username' => 'USERNAME':,
 	'password' => 'PASSWORD',
 ),
 
-5. add an observer to the 'event' => 'observers' section to handle the events:
-
-'user_before_login' => array(
-	'update_user' => array(
-		'class' => 'UserObserver',
-		'method' => 'updateUser',
-	),
-),
-
-** Optional ** add an observer to the 'event' => 'observers' section to handle pulling user details in an 'add patient' form:
-
-'lookup_user' => array(
-	'lookup_user' => array(
-		'class' => 'UserObserver',
-		'method' => 'updateUser',
-	),
-),
-
-6. add one or both of the following params directives:
+4. Optionally add one of the following params directives to override the defaults:
 
 'mehstaffdb_always_refresh' => true,
 'mehstaffdb_cache_time' => 300,
