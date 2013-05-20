@@ -37,7 +37,7 @@ class UserObserver {
 					$user->username = $remote_user->MUUID_Staff_DomainUsername;
 					$user->first_name = $remote_user->MUUID_Staff_NameFirst;
 					$user->last_name = $remote_user->MUUID_Staff_NameLast;
-					$user->email = $remote_user->MUUID_Staff_EmailAddress;
+					$user->email = Yii::app()->params['mehstaffdb_default_email'];
 					$user->title = $remote_user->MUUID_Staff_Title;
 					$user->qualifications = $remote_user->EPR_MedicalDegrees;
 					$user->role = $remote_user->MUUID_Staff_JobTitle;

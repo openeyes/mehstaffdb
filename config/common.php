@@ -18,38 +18,39 @@
  */
 
 return array(
-		'import' => array(
-			'application.modules.mehstaffdb.*',
-			'application.modules.mehstaffdb.components.*',
-			'application.modules.mehstaffdb.models.*',
-		),
-		'components' => array(
-				'event' => array(
-						'observers' => array(
-								'user_before_login' => array(
-										'update_user' => array(
-												'class' => 'UserObserver',
-												'method' => 'updateUser',
-										),
-								),
-								'lookup_user' => array(
-										'lookup_user' => array(
-												'class' => 'UserObserver',
-												'method' => 'updateUser',
-										),
-								),
-						),
+	'import' => array(
+		'application.modules.mehstaffdb.*',
+		'application.modules.mehstaffdb.components.*',
+		'application.modules.mehstaffdb.models.*',
+	),
+	'components' => array(
+		'event' => array(
+			'observers' => array(
+				'user_before_login' => array(
+					'update_user' => array(
+						'class' => 'UserObserver',
+						'method' => 'updateUser',
+					),
 				),
-				'db_staff' => array(
-						'class' => 'CDbConnection',
-						//'connectionString' => 'dblib:host=HOSTNAME;dbname=DATABASE',
-						//'username' => 'root',
-						//'password' => '',
+				'lookup_user' => array(
+					'lookup_user' => array(
+						'class' => 'UserObserver',
+						'method' => 'updateUser',
+					),
 				),
+			),
 		),
-		'params'=>array(
-				'mehstaffdb_always_refresh' => false,
-				'mehstaffdb_cache_time' => 300,
+		'db_staff' => array(
+			'class' => 'CDbConnection',
+			//'connectionString' => 'dblib:host=HOSTNAME;dbname=DATABASE',
+			//'username' => 'root',
+			//'password' => '',
 		),
+	),
+	'params'=>array(
+		'mehstaffdb_always_refresh' => false,
+		'mehstaffdb_cache_time' => 300,
+		'mehstaffdb_default_email' => 'openeyes.servicedesk@moorfields.nhs.uk',
+	),
 );
 
