@@ -17,8 +17,10 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class UserObserver {
-	public function updateUser($params) {
+class UserObserver
+{
+	public function updateUser($params)
+	{
 		if (in_array($params['username'],Yii::app()->params['local_users'])) {
 			return;
 		}
@@ -88,7 +90,8 @@ class UserObserver {
 		}
 	}
 
-	public function is_stale($username) {
+	public function is_stale($username)
+	{
 		if (!$user = User::model()->find('username=?',array($username))) {
 			return true;
 		}

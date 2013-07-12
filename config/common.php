@@ -53,4 +53,3 @@ return array(
 		'mehstaffdb_default_email' => 'openeyes.servicedesk@moorfields.nhs.uk',
 	),
 );
-

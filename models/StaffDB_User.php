@@ -77,40 +77,46 @@
  * @property integer EPR_RoleID
  */
 
-class StaffDB_User extends MultiActiveRecord {
+class StaffDB_User extends MultiActiveRecord
+{
 	/**
 	 * Returns the static model of the specified AR class.
 	 * @return PAS_Gp the static model class
 	 */
-	public static function model($className=__CLASS__) {
+	public static function model($className=__CLASS__)
+	{
 		return parent::model($className);
 	}
 
 	/**
 	 * @return string the associated db connection name
 	 */
-	public function connectionId() {
+	public function connectionId()
+	{
 		return 'db_staff';
 	}
 
 	/**
 	 * @return string the associated database table name
 	 */
-	public function tableName() {
+	public function tableName()
+	{
 		return 'MUUID_Staff_Table';
 	}
 
 	/**
 	 * @return array primary key for the table
 	 */
-	public function primaryKey() {
+	public function primaryKey()
+	{
 		return array('MUUID_Staff_UniqueID');
 	}
 
 	/**
 	 * @return array validation rules for model attributes.
 	 */
-	public function rules() {
+	public function rules()
+	{
 		return array(
 		);
 	}
@@ -118,7 +124,8 @@ class StaffDB_User extends MultiActiveRecord {
 	/**
 	 * @return array relational rules.
 	 */
-	public function relations() {
+	public function relations()
+	{
 		return array(
 		);
 	}
@@ -126,7 +133,8 @@ class StaffDB_User extends MultiActiveRecord {
 	/**
 	 * @return array customized attribute labels (name=>label)
 	 */
-	public function attributeLabels() {
+	public function attributeLabels()
+	{
 		return array(
 		);
 	}
@@ -135,7 +143,8 @@ class StaffDB_User extends MultiActiveRecord {
 	 * Retrieves a list of models based on the current search/filter conditions.
 	 * @return CActiveDataProvider the data provider that can return the models based on the search/filter conditions.
 	 */
-	public function search() {
+	public function search()
+	{
 		$criteria=new CDbCriteria;
 
 		$criteria->compare('MUUID_Staff_UniqueID',$this->MUUID_Staff_UniqueID,true);
