@@ -25,7 +25,7 @@ class UserObserver {
 
 		if (Yii::app()->params['mehstaffdb_always_refresh'] || $this->is_stale($params['username'])) {
 			try {
-				if ($remote_user = StaffDB_User::model()->find("MUUID_Staff_DomainUsername='{$params['username']}'")) {
+				if ($remote_user = StaffDB_User::model()->find("MUUID_Staff_DomainUsername=?", array($params['username']))) {
 					if (!$user = User::model()->find('username=?',array($params['username']))) {
 						$user = new User;
 						$preexists = false;
