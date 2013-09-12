@@ -52,11 +52,13 @@ EOH;
 	{
 		foreach (User::model()->findAll() as $user) {
 			if ($staff_user = StaffDB_User::model()->find("MUUID_Staff_DomainUsername=?", array($user->username)) ) {
-				foreach ($this->attribute_comparison as $oe_field => $staff_field) {
-					if ($user->$oe_field != $staff_user->$staff_field) {
-						echo "User mismatch " . $oe_field . " oe:" . $user->$oe_field . ", staff:" . $staff_user->$staff_field . "\n";
+				if (!$staff_user->MUUID_Staff_LeftMEH) {
+					foreach ($this->attribute_comparison as $oe_field => $staff_field) {
+						if ($user->$oe_field != $staff_user->$staff_field) {
+							echo $user->username . " field mismatch " . $oe_field . " oe:" . $user->$oe_field . ", staff:" . $staff_user->$staff_field . "\n";
+						}
 					}
-				}
+				}			
 			}
 		}
 
