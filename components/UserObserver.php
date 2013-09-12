@@ -58,8 +58,8 @@ class UserObserver
 					if (!$preexists) {
 						$contact = new Contact;
 					} else {
-						if ($uca = UserContactAssignment::model()->find('user_id=?',array($user->id))) {
-							$contact = $uca->contact;
+						if ($user->contact) {
+							$contact = $user->contact;
 						} else {
 							$contact = new Contact;
 						}
@@ -75,12 +75,11 @@ class UserObserver
 						throw new Exception('Unable to save contact: '.print_r($contact->getErrors(),true));
 					}
 
-					if (!$preexists || !$uca) {
-						$uca = new UserContactAssignment;
-						$uca->user_id = $user->id;
-						$uca->contact_id = $contact->id;
-						if (!$uca->save()) {
-							throw new Exception('Unable to save uca: '.print_r($uca->getErrors(),true));
+					if ($user->contact_id != $contact->id) {
+						$user->contact_id = $contact->id;
+
+						if (!$user->save()) {
+							throw new Exception("Unable to save user contact: ".print_r($user->getErrors(),true));
 						}
 					}
 				}
