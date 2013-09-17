@@ -24,20 +24,20 @@
  * the Therapy application module
  *
  */
-class UserCheckerCommand extends CConsoleCommand
+class UserFixerCommand extends CConsoleCommand
 {
 	protected $attribute_comparison = array(
 		'is_surgeon' => 'MUUID_Staff_IsSurgeon');
 
 	public function getName()
 	{
-		return 'UserChecker';
+		return 'UserFixer';
 	}
 
 	public function getHelp()
 	{
 		return $this->getName() . ":\n\n" . <<<EOH
-Will compare users in OE with those in the staff db to check for discrepancies
+Will compare users in OE with those in the staff db and fix discrepancies
 
 EOH;
 	}
@@ -55,7 +55,12 @@ EOH;
 				if (!$staff_user->MUUID_Staff_LeftMEH) {
 					foreach ($this->attribute_comparison as $oe_field => $staff_field) {
 						if ($user->$oe_field != $staff_user->$staff_field) {
-							echo $user->username . " field mismatch " . $oe_field . " oe:" . $user->$oe_field . ", staff:" . $staff_user->$staff_field . "\n";
+							echo $user->username . " has field mismatch " . $oe_field . " oe:" . $user->$oe_field . ", staff:" . $staff_user->$staff_field . ". Fixing...";
+							$user->$oe_field = $staff_user->$staff_field;
+							if(!$user->save()) {
+								throw new CException('Could not save user');
+							}
+							echo "done\n";
 						}
 					}
 				}			
