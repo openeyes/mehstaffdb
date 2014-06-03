@@ -44,7 +44,7 @@ class UserObserver
 					$user->qualifications = $remote_user->EPR_MedicalDegrees;
 					$user->role = $remote_user->MUUID_Staff_JobTitle;
 					$user->password = 'faed6633f5a86241f3e0c2bb2bb768fd';
-					$user->is_doctor = ($user->qualifications != '' && $user->qualifications != '.') ? 1 : 0;
+					$user->is_doctor = $remote_user->MUUID_Staff_IsDoctor;
 					$user->is_clinical = $remote_user->MUUID_Staff_IsClinical;
 					$user->is_consultant = $remote_user->MUUID_Staff_IsConsultant;
 					$user->is_surgeon = $remote_user->MUUID_Staff_IsSurgeon;
