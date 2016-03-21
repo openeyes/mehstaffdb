@@ -43,7 +43,6 @@ class UserObserver
 					$user->title = $remote_user->MUUID_Staff_Title;
 					$user->qualifications = $remote_user->EPR_MedicalDegrees;
 					$user->role = $remote_user->MUUID_Staff_JobTitle;
-					$user->doctor_grade_id = $this->getDoctorGradeFromJobTitle($remote_user->MUUID_Staff_JobTitle);
 					$user->password = 'faed6633f5a86241f3e0c2bb2bb768fd';
 					$user->is_doctor = $remote_user->MUUID_Staff_IsDoctor;
 					$user->is_clinical = $remote_user->MUUID_Staff_IsClinical;
@@ -97,37 +96,5 @@ class UserObserver
 		}
 
 		return (strtotime($user->last_modified_date) < (time() - Yii::app()->params['mehstaffdb_cache_time']));
-	}
-
-	private function getDoctorGradeFromJobTitle($jobTitle){
-		$MEHDescription = array(
-			"1" => "Consultant",
-			"3" => "Associate Specialist",
-			"4" => "Fellow",
-			"5" => "Specialist Registrar",
-			"7" => "Trust Doctor",
-			"8" => "Senior House Officer",
-			"16" => "House Officer",
-			"20" => "Anaesthetist",
-			"21" => "Orthoptist",
-			"22" => "Optometrist",
-			"23" => "Clinical nurse specialist",
-			"24" => "Nurse",
-			"25" => "Health Care Assistant",
-			"26" => "Ophthalmic Technician",
-			"27" => "Surgical Care Practitioner",
-			"28" => "Clinical Assistant",
-			"29" => "RG1",
-			"30" => "RG2",
-			"31" => "ODP",
-			"32" => "Administration staff");
-		//"33" => "Other"
-
-		foreach($MEHDescription as $key=>$description){
-			if(strpos($jobTitle, $description)){
-				return $key;
-			}
-		}
-		return 33; // default value is Other
 	}
 }
