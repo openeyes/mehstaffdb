@@ -124,7 +124,7 @@ class UserObserver
 		//"33" => "Other"
 
 		foreach($MEHDescription as $key=>$description){
-			if(strpos($jobTitle, $description)){
+			if(strpos($jobTitle, $description) !== false){
 				return $key;
 			}
 		}
