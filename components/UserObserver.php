@@ -134,6 +134,12 @@ class UserObserver
 
 	private function getGMCRegistrationNumber($personnelID){
 		$StaffData = StaffDB_AgressoTable::model()->find("PersonnelID=?", array($personnelID));
-		return $StaffData->ProfessionalRegistration;
+		$GMCData = $StaffData->ProfessionalRegistration;
+		$GMC = explode(" - ", $GMCData);
+		if(is_array($GMC) && count($GMC) > 0) {
+			return $GMC[1];
+		}else{
+			return "";
+		}
 	}
 }
