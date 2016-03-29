@@ -44,6 +44,7 @@ class UserObserver
 					$user->qualifications = $remote_user->EPR_MedicalDegrees;
 					$user->role = $remote_user->MUUID_Staff_JobTitle;
 					$user->doctor_grade_id = $this->getDoctorGradeFromJobTitle($remote_user->MUUID_Staff_JobTitle);
+					$user->registration_code = $remote_user->MUUID_Staff_GMCReferenceNumber;
 					$user->password = 'faed6633f5a86241f3e0c2bb2bb768fd';
 					$user->is_doctor = $remote_user->MUUID_Staff_IsDoctor;
 					$user->is_clinical = $remote_user->MUUID_Staff_IsClinical;
