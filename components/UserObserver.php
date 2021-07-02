@@ -17,46 +17,53 @@
  * @license http://www.gnu.org/licenses/gpl-3.0.html The GNU General Public License V3.0
  */
 
-class UserObserver
-{
-	public function updateUser($params)
-	{
-		if (in_array($params['username'],Yii::app()->params['local_users'])) {
-			return;
-		}
+//namespace OEModule\CSDClient\components;
 
-		if (Yii::app()->params['mehstaffdb_always_refresh'] || $this->is_stale($params['username'])) {
-			try {
-				if ($remote_user = StaffDB_User::model()->find("MUUID_Staff_DomainUsername=?", array($params['username']))) {
-					if (!$user = User::model()->find('username=?',array($params['username']))) {
+use OEModule\mehstaffdb\components\CSDClient\CSDClient;
+
+class UserObserver extends \BaseAPI
+{
+
+	/**
+     * @return CSDClient
+     */
+	protected function getCSDClient(): CSDClient
+    {
+        return CSDClient::get();
+    }
+
+
+	/**
+     * Updates user from CSD database
+     *
+     * @param array $params
+	 * @return User
+     */
+	public function updateUser($params) :User
+	{		
+		/*if (in_array($params['username'],Yii::app()->params['local_users'])) {
+			return;
+		}*/
+
+		//if (Yii::app()->params['mehstaffdb_always_refresh'] || $this->isStale($params['username'])) {
+			//try {
+				$username = "WILLIAMSS";//$params['username'];
+				$remote_user = $this->getCSDClient()->getUserData($username);
+				if ($remote_user = $this->getCSDClient()->getUserData($username)) {
+					$remote_user = json_decode($remote_user, true);
+
+					$user = $this->getUser($username);
+					$user_authentication = $this->getUserAuthentication($username);
+
+					if (!$user) {
 						$user = new User;
 						$preexists = false;
 					} else {
 						$preexists = true;
 					}
 
-					$user->code = $remote_user->MUUID_Staff_MUUID;
-					$user->username = $remote_user->MUUID_Staff_DomainUsername;
-					$user->first_name = $remote_user->MUUID_Staff_NameFirst;
-					$user->last_name = $remote_user->MUUID_Staff_NameLast;
-					$user->email = Yii::app()->params['mehstaffdb_default_email'];
-					$user->title = $remote_user->MUUID_Staff_Title;
-					$user->qualifications = $remote_user->EPR_MedicalDegrees;
-					$user->role = $remote_user->MUUID_Staff_JobTitle;
-					$user->doctor_grade_id = $this->getDoctorGradeFromJobTitle($remote_user->MUUID_Staff_JobTitle);
-					$user->registration_code = $this->getGMCRegistrationNumber($remote_user->MUUID_Staff_PersonnelID);
-					$user->password = 'faed6633f5a86241f3e0c2bb2bb768fd';
-					$user->is_doctor = $remote_user->MUUID_Staff_IsDoctor;
-					$user->is_clinical = $remote_user->MUUID_Staff_IsClinical;
-					$user->is_consultant = $remote_user->MUUID_Staff_IsConsultant;
-					$user->is_surgeon = $remote_user->MUUID_Staff_IsSurgeon;
-					$user->active = !$remote_user->MUUID_Staff_LeftMEH;
-					$user->global_firm_rights = 1;
-
-					if (!$user->save(false)) {
-						throw new Exception('Unable to save user: '.print_r($user->getErrors(),true));
-					}
-
+					$user = $this->saveUser($user, $user_authentication, $remote_user);
+					
 					if (!$preexists) {
 						$contact = new Contact;
 					} else {
@@ -67,31 +74,129 @@ class UserObserver
 						}
 					}
 
-					$contact->nick_name = $user->first_name;
-					$contact->title = $user->title;
-					$contact->first_name = $user->first_name;
-					$contact->last_name = $user->last_name;
-					$contact->qualifications = $user->qualifications;
-
-					if (!$contact->save()) {
-						throw new Exception('Unable to save contact: '.print_r($contact->getErrors(),true));
-					}
+					$contact = $this->saveContact($user, $contact);
 
 					if ($user->contact_id != $contact->id) {
 						$user->contact_id = $contact->id;
 
 						if (!$user->save()) {
+							\Yii::log("Unable to save user contact: ".print_r($user->getErrors(),true), \CLogger::LEVEL_ERROR);
 							throw new Exception("Unable to save user contact: ".print_r($user->getErrors(),true));
 						}
 					}
+					return $user;
+				} else {
+					\Yii::log("User " . $username . " not found in the CSD database.", \CLogger::LEVEL_ERROR);
+					throw new Exception("Unable to save user contact: ".$username);
 				}
-			} catch (Exception $e) {
-				// silently return back to UserIdentity without having refreshed the user
-			}
-		}
+			/*} catch (Exception $e) {
+				\Yii::log("Unable to update user. Error: ". $e->getMessage(), \CLogger::LEVEL_ERROR);
+			}*/
+		//}
 	}
 
-	public function is_stale($username)
+
+	/**
+     * Finds User by username
+     *
+     * @param string $username
+     * @return User
+     */
+	private function getUser(string $username): User
+	{
+		$criteria = new \CDbCriteria();
+		$criteria->join = 'JOIN user_authentication ua ON t.id = ua.user_id';
+		$criteria->addCondition('ua.username = :username');
+		$criteria->params[':username'] = $username;
+		$user = \User::model()->find($criteria);
+		return $user;
+	}
+
+	/**
+     * Finds UserAuthentication by username
+     *
+     * @param string $username
+     * @return UserAuthentication
+     */
+	private function getUserAuthentication(string $username): UserAuthentication
+	{
+		$criteria = new \CDbCriteria();
+		$criteria->addCondition('username = :username');
+		$criteria->params[':username'] = "WILLIAMSS";//$params['username'];
+		$user_authentication = \UserAuthentication::model()->find($criteria);
+		return $user_authentication;
+	}
+
+	/**
+     * Saves new User data which is coming from $remote_user
+     *
+     * @param User $user
+	 * @param UserAuthentication $user_authentication
+	 * @param array $remote_user
+     * @return User
+     */
+	private function saveUser(User $user, UserAuthentication $user_authentication, array $remote_user): User
+	{
+		$user->code = $remote_user['code'];
+		$user_authentication->username = $remote_user['username'];
+		$user->first_name = $remote_user['first_name'];
+		$user->last_name = $remote_user['last_name'];
+		$mehstaffdb_default_email = Yii::app()->params['mehstaffdb_default_email'];
+		if(strlen($mehstaffdb_default_email) != 0) {
+			$user->email = $mehstaffdb_default_email;
+		}
+		$user->title = $remote_user['title'];
+		$user->qualifications = $remote_user['qualifications'];
+		$user->role = $remote_user['role'];
+		$user->doctor_grade_id = $this->getDoctorGradeFromJobTitle($remote_user['role']);
+		if(isset($remote_user['registration_code']) && isset($remote_user['registration_code'][0]['ProfessionalRegistration'])) {
+			$user->registration_code = $this->getGMCRegistrationNumber($remote_user['registration_code'][0]['ProfessionalRegistration']);
+		}
+		//$user->password = 'faed6633f5a86241f3e0c2bb2bb768fd';
+		$user->is_consultant = $remote_user['is_consultant'];
+		$user->is_surgeon = $remote_user['is_surgeon'];
+		$user_authentication->active = !$remote_user['active'];
+		$user->global_firm_rights = 1;
+
+		if (!$user->save(false)) {
+			\Yii::log('Unable to save user: '.print_r($user->getErrors(),true), \CLogger::LEVEL_ERROR);
+			throw new Exception('Unable to save user: '.print_r($user->getErrors(),true));
+		}
+
+		return $user;
+	}
+
+	/**
+     * Saves new User data which is coming from $remote_user
+     *
+     * @param User $user
+	 * @param Contact $contact
+	 * @return Contact
+	 * 
+     */
+	private function saveContact(User $user, Contact $contact): Contact
+	{
+		$contact->nick_name = $user->first_name;
+		$contact->title = $user->title;
+		$contact->first_name = $user->first_name;
+		$contact->last_name = $user->last_name;
+		$contact->qualifications = $user->qualifications;
+
+		if (!$contact->save()) {
+			\Yii::log('Unable to save contact: '.print_r($contact->getErrors(),true), \CLogger::LEVEL_ERROR);
+			throw new Exception('Unable to save contact: '.print_r($contact->getErrors(),true));
+		}
+
+		return $contact;
+	}
+
+	/**
+     * Check if user is stale
+     *
+     * @param string $username
+     * @return bool
+     */
+	private function isStale(string $username): bool
 	{
 		if (!$user = User::model()->find('username=?',array($username))) {
 			return true;
@@ -100,29 +205,37 @@ class UserObserver
 		return (strtotime($user->last_modified_date) < (time() - Yii::app()->params['mehstaffdb_cache_time']));
 	}
 
-	private function getDoctorGradeFromJobTitle($jobTitle){
-		$MEHDescription = array(
-			"1" => "Consultant",
-			"3" => "Associate Specialist",
-			"4" => "Fellow",
-			"5" => "Specialist Registrar",
-			"7" => "Trust Doctor",
-			"8" => "Senior House Officer",
-			"16" => "House Officer",
-			"20" => "Anaesthetist",
-			"21" => "Orthoptist",
-			"22" => "Optometrist",
-			"23" => "Clinical nurse specialist",
-			"24" => "Nurse",
-			"25" => "Health Care Assistant",
-			"26" => "Ophthalmic Technician",
-			"27" => "Surgical Care Practitioner",
-			"28" => "Clinical Assistant",
-			"29" => "RG1",
-			"30" => "RG2",
-			"31" => "ODP",
-			"32" => "Administration staff");
-		//"33" => "Other"
+	/**
+     * Connect job title to doctor grade id
+     *
+     * @param string $jobTitle
+     * @return int ID of the doctor grade
+     */
+	private function getDoctorGradeFromJobTitle(string $jobTitle): int
+	{
+		$MEHDescription = array
+		(
+			1 => "Consultant",
+			3 => "Associate Specialist",
+			4 => "Fellow",
+			5 => "Specialist Registrar",
+			7 => "Trust Doctor",
+			8 => "Senior House Officer",
+			16 => "House Officer",
+			20 => "Anaesthetist",
+			21 => "Orthoptist",
+			22 => "Optometrist",
+			23 => "Clinical nurse specialist",
+			24 => "Nurse",
+			25 => "Health Care Assistant",
+			26 => "Ophthalmic Technician",
+			27 => "Surgical Care Practitioner",
+			28 => "Clinical Assistant",
+			29 => "RG1",
+			30 => "RG2",
+			31 => "ODP",
+			32 => "Administration staff"
+		);
 
 		foreach($MEHDescription as $key=>$description){
 			if(strpos($jobTitle, $description) !== false){
@@ -132,11 +245,9 @@ class UserObserver
 		return 33; // default value is Other
 	}
 
-	private function getGMCRegistrationNumber($personnelID){
-		$StaffData = StaffDB_AgressoTable::model()->find("PersonnelID=?", array($personnelID));
-		if($StaffData) {
-			$GMCData = $StaffData->ProfessionalRegistration;
-			$GMC = explode(" - ", $GMCData);
+	private function getGMCRegistrationNumber($professional_registration){
+		if($professional_registration) {
+			$GMC = explode(" - ", $professional_registration);
 			if (is_array($GMC) && count($GMC) > 0) {
 				return $GMC[1];
 			} else {
