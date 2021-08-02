@@ -39,24 +39,25 @@ class UserObserver extends \BaseAPI
      * @param array $params
 	 * @return User
      */
-	public function updateUser($params) :User
-	{		
-		/*if (in_array($params['username'],Yii::app()->params['local_users'])) {
+	public function updateUser($params)
+	{
+		if (in_array($params['username'],Yii::app()->params['local_users'])) {
 			return;
-		}*/
+		}
 
-		//if (Yii::app()->params['mehstaffdb_always_refresh'] || $this->isStale($params['username'])) {
-			//try {
-				$username = "WILLIAMSS";//$params['username'];
+		if (Yii::app()->params['mehstaffdb_always_refresh'] || $this->isStale($params['username'], $params['institution_authentication_id'])) {
+			try {
+				$username = $params['username'];
+				$institution_authentication_id = $params['institution_authentication_id'];
 				$remote_user = $this->getCSDClient()->getUserData($username);
 				if ($remote_user = $this->getCSDClient()->getUserData($username)) {
 					$remote_user = json_decode($remote_user, true);
 
-					$user = $this->getUser($username);
+					$user = $this->getUser($username, $institution_authentication_id);
 					$user_authentication = $this->getUserAuthentication($username);
 
 					if (!$user) {
-						$user = new User;
+						$user = new User();
 						$preexists = false;
 					} else {
 						$preexists = true;
@@ -65,12 +66,12 @@ class UserObserver extends \BaseAPI
 					$user = $this->saveUser($user, $user_authentication, $remote_user);
 					
 					if (!$preexists) {
-						$contact = new Contact;
+						$contact = new Contact();
 					} else {
 						if ($user->contact) {
 							$contact = $user->contact;
 						} else {
-							$contact = new Contact;
+							$contact = new Contact();
 						}
 					}
 
@@ -89,10 +90,11 @@ class UserObserver extends \BaseAPI
 					\Yii::log("User " . $username . " not found in the CSD database.", \CLogger::LEVEL_ERROR);
 					throw new Exception("Unable to save user contact: ".$username);
 				}
-			/*} catch (Exception $e) {
+			} catch (Exception $e) {
 				\Yii::log("Unable to update user. Error: ". $e->getMessage(), \CLogger::LEVEL_ERROR);
-			}*/
-		//}
+				throw new Exception("Unable to save user contact: ".print_r($user->getErrors(),true));
+			}
+		}
 	}
 
 
@@ -102,12 +104,14 @@ class UserObserver extends \BaseAPI
      * @param string $username
      * @return User
      */
-	private function getUser(string $username): User
+	private function getUser(string $username, int $institution_authentication_id): User
 	{
 		$criteria = new \CDbCriteria();
 		$criteria->join = 'JOIN user_authentication ua ON t.id = ua.user_id';
 		$criteria->addCondition('ua.username = :username');
 		$criteria->params[':username'] = $username;
+		$criteria->addCondition('ua.institution_authentication_id = :institution_authentication_id');
+		$criteria->params[':institution_authentication_id'] = $institution_authentication_id;
 		$user = \User::model()->find($criteria);
 		return $user;
 	}
@@ -122,7 +126,7 @@ class UserObserver extends \BaseAPI
 	{
 		$criteria = new \CDbCriteria();
 		$criteria->addCondition('username = :username');
-		$criteria->params[':username'] = "WILLIAMSS";//$params['username'];
+		$criteria->params[':username'] = $username;
 		$user_authentication = \UserAuthentication::model()->find($criteria);
 		return $user_authentication;
 	}
@@ -163,6 +167,11 @@ class UserObserver extends \BaseAPI
 			throw new Exception('Unable to save user: '.print_r($user->getErrors(),true));
 		}
 
+		if (!$user_authentication->save(false)) {
+			\Yii::log('Unable to save user: '.print_r($user->getErrors(),true), \CLogger::LEVEL_ERROR);
+			throw new Exception('Unable to save user: '.print_r($user->getErrors(),true));
+		}
+
 		return $user;
 	}
 
@@ -196,9 +205,11 @@ class UserObserver extends \BaseAPI
      * @param string $username
      * @return bool
      */
-	private function isStale(string $username): bool
+	private function isStale(string $username, int $institution_authentication_id): bool
 	{
-		if (!$user = User::model()->find('username=?',array($username))) {
+		$user = $this->getUser($username, $institution_authentication_id);
+
+		if (!$user) {
 			return true;
 		}
 
