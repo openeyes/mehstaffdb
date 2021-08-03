@@ -159,7 +159,6 @@ class UserObserver extends \BaseAPI
 		if(isset($remote_user['registration_code']) && isset($remote_user['registration_code'][0]['ProfessionalRegistration'])) {
 			$user->registration_code = $this->getGMCRegistrationNumber($remote_user['registration_code'][0]['ProfessionalRegistration']);
 		}
-		//$user->password = 'faed6633f5a86241f3e0c2bb2bb768fd';
 		$user->is_consultant = $remote_user['is_consultant'];
 		$user->is_surgeon = $remote_user['is_surgeon'];
 		$user_authentication->active = !$remote_user['active'];

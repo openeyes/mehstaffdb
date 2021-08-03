@@ -36,7 +36,8 @@ abstract class Request implements RequestInterface
     {
         return [
             "csd_api_key",
-            "csd_api_url"
+            "csd_api_url",
+            "csd_api_timeout"
         ];
     }
 
@@ -56,7 +57,7 @@ abstract class Request implements RequestInterface
      */
     public function getTimeout(): int
     {
-        return 3;
+        return $this->csd_api_timeout;
     }
 
     /**
