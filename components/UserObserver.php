@@ -54,7 +54,7 @@ class UserObserver extends \BaseAPI
 					$remote_user = json_decode($remote_user, true);
 
 					$user = $this->getUser($username, $institution_authentication_id);
-					$user_authentication = $this->getUserAuthentication($username);
+					$user_authentication = $this->getUserAuthentication($username, $institution_authentication_id);
 
 					if (!$user) {
 						$user = new User();
@@ -77,7 +77,7 @@ class UserObserver extends \BaseAPI
 
 					$contact = $this->saveContact($user, $contact);
 
-					if ($user->contact_id != $contact->id) {
+					if ($user->contact_id !== $contact->id) {
 						$user->contact_id = $contact->id;
 
 						if (!$user->save()) {
@@ -122,11 +122,14 @@ class UserObserver extends \BaseAPI
      * @param string $username
      * @return UserAuthentication
      */
-	private function getUserAuthentication(string $username): UserAuthentication
+	private function getUserAuthentication(string $username, int $institution_authentication_id): UserAuthentication
 	{
 		$criteria = new \CDbCriteria();
+		$criteria->join = 'JOIN institution_authentication ia ON t.institution_authentication_id = ia.id';
 		$criteria->addCondition('username = :username');
 		$criteria->params[':username'] = $username;
+		$criteria->addCondition('institution_authentication_id = :institution_authentication_id');
+		$criteria->params[':institution_authentication_id'] = $institution_authentication_id;
 		$user_authentication = \UserAuthentication::model()->find($criteria);
 		return $user_authentication;
 	}
@@ -162,12 +165,12 @@ class UserObserver extends \BaseAPI
 		$user_authentication->active = !$remote_user['active'];
 		$user->global_firm_rights = 1;
 
-		if (!$user->save(false)) {
+		if (!$user->save()) {
 			\Yii::log('Unable to save user: '.print_r($user->getErrors(),true), \CLogger::LEVEL_ERROR);
 			throw new Exception('Unable to save user: '.print_r($user->getErrors(),true));
 		}
 
-		if (!$user_authentication->save(false)) {
+		if (!$user_authentication->save()) {
 			\Yii::log('Unable to save user: '.print_r($user->getErrors(),true), \CLogger::LEVEL_ERROR);
 			throw new Exception('Unable to save user: '.print_r($user->getErrors(),true));
 		}
