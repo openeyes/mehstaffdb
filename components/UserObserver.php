@@ -48,7 +48,7 @@ class UserObserver extends \BaseAPI
 			$institutionId = Institution::model()->find('remote_id = "'.  Yii::app()->params['institution_code'] . '"')->id;
 			$institution_authentication_id = InstitutionAuthentication::model()->find('institution_id="'. $institutionId .'"')->id;
 		} else {
-			$institutuin_authentication_id = $params['institution_authentication_id'];
+			$institution_authentication_id = $params['institution_authentication_id'];
 		}
 			 
 		if (Yii::app()->params['mehstaffdb_always_refresh'] || $this->isStale($params['username'], $institution_authentication_id)) {
