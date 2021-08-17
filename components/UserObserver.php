@@ -165,6 +165,7 @@ class UserObserver extends \BaseAPI
 		$user->title = $remote_user['title'];
 		$user->qualifications = $remote_user['qualifications'];
 		$user->role = $remote_user['role'];
+		$user->setdefaultSSORights();
 		$user->doctor_grade_id = $this->getDoctorGradeFromJobTitle($remote_user['role']);
 		if(isset($remote_user['registration_code']) && isset($remote_user['registration_code'][0]['ProfessionalRegistration'])) {
 			$user->registration_code = $this->getGMCRegistrationNumber($remote_user['registration_code'][0]['ProfessionalRegistration']);
