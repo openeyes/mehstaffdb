@@ -44,11 +44,21 @@ class UserObserver extends \BaseAPI
 		if (in_array($params['username'],Yii::app()->params['local_users'])) {
 			return;
 		}
-
-		if (Yii::app()->params['mehstaffdb_always_refresh'] || $this->isStale($params['username'], $params['institution_authentication_id'])) {
+		if (!isset($params['institution_authentication_id'])) {
+			$institutionId = Institution::model()->find('remote_id = "'.  Yii::app()->params['institution_code'] . '"')->id;
+			$institution_authentication_id = InstitutionAuthentication::model()->find('institution_id="'. $institutionId .'"')->id;
+		} else {
+			$institutuin_authentication_id = $params['institution_authentication_id'];
+		}
+			 
+		if (Yii::app()->params['mehstaffdb_always_refresh'] || $this->isStale($params['username'], $institution_authentication_id)) {
 			try {
 				$username = $params['username'];
 				$institution_authentication_id = $params['institution_authentication_id'];
+				if(!$institution_authentication_id) {
+					$institutionId = Institution::model()->find('remote_id = "'.  Yii::app()->params['institution_code'] . '"')->id;
+					$institution_authentication_id = InstitutionAuthentication::model()->find('institution_id="'. $institutionId .'"')->id;
+				}	
 				$remote_user = $this->getCSDClient()->getUserData($username);
 				if ($remote_user = $this->getCSDClient()->getUserData($username)) {
 					$remote_user = json_decode($remote_user, true);
@@ -58,6 +68,7 @@ class UserObserver extends \BaseAPI
 
 					if (!$user) {
 						$user = new User();
+						$user_authentication = new UserAuthentication();
 						$preexists = false;
 					} else {
 						$preexists = true;
@@ -102,9 +113,9 @@ class UserObserver extends \BaseAPI
      * Finds User by username
      *
      * @param string $username
-     * @return User
+     * @return User|null
      */
-	private function getUser(string $username, int $institution_authentication_id): User
+	private function getUser(string $username, int $institution_authentication_id)
 	{
 		$criteria = new \CDbCriteria();
 		$criteria->join = 'JOIN user_authentication ua ON t.id = ua.user_id';
@@ -120,9 +131,9 @@ class UserObserver extends \BaseAPI
      * Finds UserAuthentication by username
      *
      * @param string $username
-     * @return UserAuthentication
+     * @return UserAuthentication|null
      */
-	private function getUserAuthentication(string $username, int $institution_authentication_id): UserAuthentication
+	private function getUserAuthentication(string $username, int $institution_authentication_id)
 	{
 		$criteria = new \CDbCriteria();
 		$criteria->join = 'JOIN institution_authentication ia ON t.institution_authentication_id = ia.id';
