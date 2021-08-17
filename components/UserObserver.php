@@ -68,6 +68,10 @@ class UserObserver extends \BaseAPI
 					if (!$user) {
 						$user = new User();
 						$user_authentication = new UserAuthentication();
+						$user_authentication->password = $this->genPassword();
+						$user_authentication->password_repeat = $user_authentication->password;
+						$user_authentication->institution_authentication_id = $institution_authentication_id;
+						
 						$preexists = false;
 					} else {
 						$preexists = true;
@@ -102,7 +106,7 @@ class UserObserver extends \BaseAPI
 				}
 			} catch (Exception $e) {
 				\Yii::log("Unable to update user. Error: ". $e->getMessage(), \CLogger::LEVEL_ERROR);
-				throw new Exception("Unable to save user contact: ".print_r($user->getErrors(),true));
+				throw new Exception("Unable to save user contact: ".print_r($e->getMessage(),true));
 			}
 		}
 	}
@@ -180,9 +184,11 @@ class UserObserver extends \BaseAPI
 			throw new Exception('Unable to save user: '.print_r($user->getErrors(),true));
 		}
 
+		$user_authentication->user_id = $user->id;
+
 		if (!$user_authentication->save()) {
-			\Yii::log('Unable to save user: '.print_r($user->getErrors(),true), \CLogger::LEVEL_ERROR);
-			throw new Exception('Unable to save user: '.print_r($user->getErrors(),true));
+			\Yii::log('Unable to save user: '.print_r($user_authentication->getErrors(),true), \CLogger::LEVEL_ERROR);
+			throw new Exception('Unable to save user: '.print_r($user_authentication->getErrors(),true));
 		}
 
 		return $user;
@@ -269,7 +275,7 @@ class UserObserver extends \BaseAPI
 		return 33; // default value is Other
 	}
 
-	private function getGMCRegistrationNumber($professional_registration){
+	private function getGMCRegistrationNumber($professional_registration) {
 		if($professional_registration) {
 			$GMC = explode(" - ", $professional_registration);
 			if (is_array($GMC) && count($GMC) > 0) {
@@ -280,5 +286,38 @@ class UserObserver extends \BaseAPI
 		} else {
 			return "";
 		}
+	}
+
+	private function genPassword() {
+		$consonants = 'bcdfghjklmnpqrstvz';
+		$vowels = 'aeiou';
+		$special_characters = '_!*@';
+
+		$l = 8;
+		$code = "";
+	
+		for ($i=0; $i<$l; $i++) {
+			if ($i%2===0) {
+				$r = rand(0,strlen($consonants)-1);
+				$letter = substr($consonants,$r,1);
+			} elseif ($i%4===3) {
+				$r = rand(0,9);
+				$letter = $r;
+			} else {
+				$r = rand(0,strlen($vowels)-1);
+				$letter = substr($vowels,$r,1);
+			}
+	
+			if ($i%4===0) {
+				$letter = strtoupper($letter);
+			}
+			$code .= $letter;
+		}
+
+		$r = rand(0,strlen($special_characters)-1);
+		$letter = substr($special_characters,$r,1);
+		$code .= $letter;
+			
+		return $code;
 	}
 }
