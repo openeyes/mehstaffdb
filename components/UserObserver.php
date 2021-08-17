@@ -45,8 +45,8 @@ class UserObserver extends \BaseAPI
 			return;
 		}
 		if (!isset($params['institution_authentication_id'])) {
-			$institutionId = Institution::model()->find('remote_id = "'.  Yii::app()->params['institution_code'] . '"')->id;
-			$institution_authentication_id = InstitutionAuthentication::model()->find('institution_id="'. $institutionId .'"')->id;
+			$institutionId = Institution::model()->find('remote_id = ?',array(Yii::app()->params['institution_code']))->id;
+			$institution_authentication_id = InstitutionAuthentication::model()->find('institution_id= ?',array($institutionId))->id;
 		} else {
 			$institution_authentication_id = $params['institution_authentication_id'];
 		}
@@ -54,10 +54,6 @@ class UserObserver extends \BaseAPI
 		if (Yii::app()->params['mehstaffdb_always_refresh'] || $this->isStale($params['username'], $institution_authentication_id)) {
 			try {
 				$username = $params['username'];
-				if(!$institution_authentication_id) {
-					$institutionId = Institution::model()->find('remote_id = "'.  Yii::app()->params['institution_code'] . '"')->id;
-					$institution_authentication_id = InstitutionAuthentication::model()->find('institution_id="'. $institutionId .'"')->id;
-				}	
 				$remote_user = $this->getCSDClient()->getUserData($username);
 				if ($remote_user = $this->getCSDClient()->getUserData($username)) {
 					$remote_user = json_decode($remote_user, true);
