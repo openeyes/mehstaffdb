@@ -44,11 +44,16 @@ class UserObserver extends \BaseAPI
 		if (in_array($params['username'],Yii::app()->params['local_users'])) {
 			return;
 		}
-
-		if (Yii::app()->params['mehstaffdb_always_refresh'] || $this->isStale($params['username'], $params['institution_authentication_id'])) {
+		if (!isset($params['institution_authentication_id'])) {
+			$institutionId = Institution::model()->find('remote_id = ?',array(Yii::app()->params['institution_code']))->id;
+			$institution_authentication_id = InstitutionAuthentication::model()->find('institution_id= ?',array($institutionId))->id;
+		} else {
+			$institution_authentication_id = $params['institution_authentication_id'];
+		}
+			 
+		if (Yii::app()->params['mehstaffdb_always_refresh'] || $this->isStale($params['username'], $institution_authentication_id)) {
 			try {
 				$username = $params['username'];
-				$institution_authentication_id = $params['institution_authentication_id'];
 				$remote_user = $this->getCSDClient()->getUserData($username);
 				if ($remote_user = $this->getCSDClient()->getUserData($username)) {
 					$remote_user = json_decode($remote_user, true);
@@ -58,6 +63,11 @@ class UserObserver extends \BaseAPI
 
 					if (!$user) {
 						$user = new User();
+						$user_authentication = new UserAuthentication();
+						$user_authentication->password = $this->genPassword();
+						$user_authentication->password_repeat = $user_authentication->password;
+						$user_authentication->institution_authentication_id = $institution_authentication_id;
+						
 						$preexists = false;
 					} else {
 						$preexists = true;
@@ -92,7 +102,7 @@ class UserObserver extends \BaseAPI
 				}
 			} catch (Exception $e) {
 				\Yii::log("Unable to update user. Error: ". $e->getMessage(), \CLogger::LEVEL_ERROR);
-				throw new Exception("Unable to save user contact: ".print_r($user->getErrors(),true));
+				throw new Exception("Unable to save user contact: ".print_r($e->getMessage(),true));
 			}
 		}
 	}
@@ -102,9 +112,9 @@ class UserObserver extends \BaseAPI
      * Finds User by username
      *
      * @param string $username
-     * @return User
+     * @return User|null
      */
-	private function getUser(string $username, int $institution_authentication_id): User
+	private function getUser(string $username, int $institution_authentication_id)
 	{
 		$criteria = new \CDbCriteria();
 		$criteria->join = 'JOIN user_authentication ua ON t.id = ua.user_id';
@@ -120,9 +130,9 @@ class UserObserver extends \BaseAPI
      * Finds UserAuthentication by username
      *
      * @param string $username
-     * @return UserAuthentication
+     * @return UserAuthentication|null
      */
-	private function getUserAuthentication(string $username, int $institution_authentication_id): UserAuthentication
+	private function getUserAuthentication(string $username, int $institution_authentication_id)
 	{
 		$criteria = new \CDbCriteria();
 		$criteria->join = 'JOIN institution_authentication ia ON t.institution_authentication_id = ia.id';
@@ -155,6 +165,7 @@ class UserObserver extends \BaseAPI
 		$user->title = $remote_user['title'];
 		$user->qualifications = $remote_user['qualifications'];
 		$user->role = $remote_user['role'];
+		$user->setdefaultSSORights();
 		$user->doctor_grade_id = $this->getDoctorGradeFromJobTitle($remote_user['role']);
 		if(isset($remote_user['registration_code']) && isset($remote_user['registration_code'][0]['ProfessionalRegistration'])) {
 			$user->registration_code = $this->getGMCRegistrationNumber($remote_user['registration_code'][0]['ProfessionalRegistration']);
@@ -169,9 +180,11 @@ class UserObserver extends \BaseAPI
 			throw new Exception('Unable to save user: '.print_r($user->getErrors(),true));
 		}
 
+		$user_authentication->user_id = $user->id;
+
 		if (!$user_authentication->save()) {
-			\Yii::log('Unable to save user: '.print_r($user->getErrors(),true), \CLogger::LEVEL_ERROR);
-			throw new Exception('Unable to save user: '.print_r($user->getErrors(),true));
+			\Yii::log('Unable to save user: '.print_r($user_authentication->getErrors(),true), \CLogger::LEVEL_ERROR);
+			throw new Exception('Unable to save user: '.print_r($user_authentication->getErrors(),true));
 		}
 
 		return $user;
@@ -258,7 +271,7 @@ class UserObserver extends \BaseAPI
 		return 33; // default value is Other
 	}
 
-	private function getGMCRegistrationNumber($professional_registration){
+	private function getGMCRegistrationNumber($professional_registration) {
 		if($professional_registration) {
 			$GMC = explode(" - ", $professional_registration);
 			if (is_array($GMC) && count($GMC) > 0) {
@@ -269,5 +282,38 @@ class UserObserver extends \BaseAPI
 		} else {
 			return "";
 		}
+	}
+
+	private function genPassword() {
+		$consonants = 'bcdfghjklmnpqrstvz';
+		$vowels = 'aeiou';
+		$special_characters = '_!*@';
+
+		$l = 8;
+		$code = "";
+	
+		for ($i=0; $i<$l; $i++) {
+			if ($i%2===0) {
+				$r = rand(0,strlen($consonants)-1);
+				$letter = substr($consonants,$r,1);
+			} elseif ($i%4===3) {
+				$r = rand(0,9);
+				$letter = $r;
+			} else {
+				$r = rand(0,strlen($vowels)-1);
+				$letter = substr($vowels,$r,1);
+			}
+	
+			if ($i%4===0) {
+				$letter = strtoupper($letter);
+			}
+			$code .= $letter;
+		}
+
+		$r = rand(0,strlen($special_characters)-1);
+		$letter = substr($special_characters,$r,1);
+		$code .= $letter;
+			
+		return $code;
 	}
 }
