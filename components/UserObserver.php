@@ -90,7 +90,7 @@ class UserObserver extends \BaseAPI
 					if ($user->contact_id !== $contact->id) {
 						$user->contact_id = $contact->id;
 
-						if (!$user->save()) {
+						if (!$user->save(false)) {
 							\Yii::log("Unable to save user contact: ".print_r($user->getErrors(),true), \CLogger::LEVEL_ERROR);
 							throw new Exception("Unable to save user contact: ".print_r($user->getErrors(),true));
 						}
@@ -98,7 +98,7 @@ class UserObserver extends \BaseAPI
 					return $user;
 				} else {
 					\Yii::log("User " . $username . " not found in the CSD database.", \CLogger::LEVEL_ERROR);
-					throw new Exception("Unable to save user contact: ".$username);
+					return;
 				}
 			} catch (Exception $e) {
 				\Yii::log("Unable to update user. Error: ". $e->getMessage(), \CLogger::LEVEL_ERROR);
@@ -175,7 +175,7 @@ class UserObserver extends \BaseAPI
 		$user_authentication->active = !$remote_user['active'];
 		$user->global_firm_rights = 1;
 
-		if (!$user->save()) {
+		if (!$user->save(false)) {
 			\Yii::log('Unable to save user: '.print_r($user->getErrors(),true), \CLogger::LEVEL_ERROR);
 			throw new Exception('Unable to save user: '.print_r($user->getErrors(),true));
 		}
@@ -206,7 +206,7 @@ class UserObserver extends \BaseAPI
 		$contact->last_name = $user->last_name;
 		$contact->qualifications = $user->qualifications;
 
-		if (!$contact->save()) {
+		if (!$contact->save(false)) {
 			\Yii::log('Unable to save contact: '.print_r($contact->getErrors(),true), \CLogger::LEVEL_ERROR);
 			throw new Exception('Unable to save contact: '.print_r($contact->getErrors(),true));
 		}
