@@ -172,7 +172,7 @@ class UserObserver extends \BaseAPI
 		}
 		$user->is_consultant = $remote_user['is_consultant'];
 		$user->is_surgeon = $remote_user['is_surgeon'];
-		$user_authentication->active = !$remote_user['active'];
+		$user_authentication->active = $remote_user['active'];
 		$user->global_firm_rights = 1;
 
 		if (!$user->save(false)) {
