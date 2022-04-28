@@ -57,7 +57,7 @@ abstract class Request implements RequestInterface
      */
     public function getTimeout(): int
     {
-        return $this->csd_api_timeout;
+        return (int)$this->csd_api_timeout;
     }
 
     /**
