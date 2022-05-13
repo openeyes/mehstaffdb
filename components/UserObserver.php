@@ -163,7 +163,6 @@ class UserObserver extends \BaseAPI
 			$user->email = $mehstaffdb_default_email;
 		}
 		$user->title = $remote_user['title'];
-		$user->qualifications = $remote_user['qualifications'];
 		$user->role = $remote_user['role'];
 		$user->setdefaultSSORights();
 		$user->doctor_grade_id = $this->getDoctorGradeFromJobTitle($remote_user['role']);
@@ -178,6 +177,15 @@ class UserObserver extends \BaseAPI
 		if (!$user->save(false)) {
 			\Yii::log('Unable to save user: '.print_r($user->getErrors(),true), \CLogger::LEVEL_ERROR);
 			throw new Exception('Unable to save user: '.print_r($user->getErrors(),true));
+		}
+
+		if (!empty($remote_user['qualifications'])) {
+			$contact = $user->contact;
+			if (!$contact) {
+				$contact = new Contact();
+			}
+			$contact->qualifications = $remote_user['qualifications'];
+			$this->saveContact($user, $contact);
 		}
 
 		$user_authentication->user_id = $user->id;
@@ -204,7 +212,6 @@ class UserObserver extends \BaseAPI
 		$contact->title = $user->title;
 		$contact->first_name = $user->first_name;
 		$contact->last_name = $user->last_name;
-		$contact->qualifications = $user->qualifications;
 
 		if (!$contact->save(false)) {
 			\Yii::log('Unable to save contact: '.print_r($contact->getErrors(),true), \CLogger::LEVEL_ERROR);
