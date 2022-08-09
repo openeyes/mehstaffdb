@@ -166,9 +166,6 @@ class UserObserver extends \BaseAPI
 		$user->role = $remote_user['role'];
 		$user->setdefaultSSORights();
 		$user->doctor_grade_id = $this->getDoctorGradeFromJobTitle($remote_user['role']);
-		if(isset($remote_user['registration_code']) && isset($remote_user['registration_code'][0]['ProfessionalRegistration'])) {
-			$user->registration_code = $this->getGMCRegistrationNumber($remote_user['registration_code'][0]['ProfessionalRegistration']);
-		}
 		$user->is_consultant = $remote_user['is_consultant'];
 		$user->is_surgeon = $remote_user['is_surgeon'];
 		$user_authentication->active = $remote_user['active'];
@@ -276,19 +273,6 @@ class UserObserver extends \BaseAPI
 			}
 		}
 		return 33; // default value is Other
-	}
-
-	private function getGMCRegistrationNumber($professional_registration) {
-		if($professional_registration) {
-			$GMC = explode(" - ", $professional_registration);
-			if (is_array($GMC) && count($GMC) > 0) {
-				return $GMC[1];
-			} else {
-				return "";
-			}
-		} else {
-			return "";
-		}
 	}
 
 	private function genPassword() {
