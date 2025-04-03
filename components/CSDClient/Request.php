@@ -25,6 +25,8 @@ abstract class Request implements RequestInterface
     protected string $csd_api_key;
     /** @var string */
     protected string $csd_api_url;
+    /** @var string */
+    protected string $csd_api_timeout;
 
     /**
      * Child classes must extend this to be able
