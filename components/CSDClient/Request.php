@@ -47,7 +47,7 @@ abstract class Request implements RequestInterface
     {
         foreach ($this->getSettingKeys() as $setting_key) {
             $setting_value = \Yii::app()->params[$setting_key];
-            if (strlen($setting_value) === 0) {
+            if (strlen((string) $setting_value) === 0) {
                 throw new \Exception("$setting_key not set");
             }
             $this->$setting_key = $setting_value;

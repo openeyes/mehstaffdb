@@ -44,6 +44,11 @@ class UserObserver extends \BaseAPI
 		if (in_array($params['username'],Yii::app()->params['local_users'])) {
 			return;
 		}
+		// CSD integration is optional: if no endpoint is configured (e.g. CI, or a
+		// deployment without the staff DB), skip the remote sync rather than failing.
+		if (empty(Yii::app()->params['csd_api_url'])) {
+			return;
+		}
 		if (!isset($params['institution_authentication_id'])) {
 			$institutionId = Institution::model()->find('remote_id = ?',array(Yii::app()->params['institution_code']))->id;
 			$institution_authentication_id = InstitutionAuthentication::model()->find('institution_id= ?',array($institutionId))->id;
