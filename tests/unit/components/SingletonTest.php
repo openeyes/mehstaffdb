@@ -15,22 +15,37 @@
  * @license http://www.gnu.org/licenses/agpl-3.0.html The GNU Affero General Public License V3.0
  */
 
-namespace OEModule\CSDClient\tests\unit\components;
+namespace OEModule\mehstaffdb\tests\unit\components;
 
-use OEModule\CSDClient\components\Singleton;
+use OEModule\mehstaffdb\components\Singleton;
+
+/**
+ * Concrete subclasses used to exercise the abstract Singleton base.
+ * Each distinct subclass should resolve to its own single shared instance.
+ */
+class SingletonTestSubjectA extends Singleton
+{
+}
+
+class SingletonTestSubjectB extends Singleton
+{
+}
 
 class SingletonTest extends \CTestCase
 {
-    public function testGet()
+    public function testGetReturnsInstanceOfTheCalledClass(): void
     {
-        $stub1 = $this->getMockClass(Singleton::class, ["get"], [], "class1");
-        $stub2 = $this->getMockClass(Singleton::class, ["get"], [], "class2");
-        $obj1 = $stub1::get();
-        $obj2 = $stub2::get();
-        $this->assertNotSame($obj1, $obj2);
-        $this->assertInstanceOf($stub1, $obj1);
-        $this->assertInstanceOf($stub2, $obj2);
-        $obj3 = $stub1::get();
-        $this->assertSame($obj1, $obj3);
+        $this->assertInstanceOf(SingletonTestSubjectA::class, SingletonTestSubjectA::get());
+        $this->assertInstanceOf(SingletonTestSubjectB::class, SingletonTestSubjectB::get());
+    }
+
+    public function testGetReturnsTheSameInstanceOnRepeatedCalls(): void
+    {
+        $this->assertSame(SingletonTestSubjectA::get(), SingletonTestSubjectA::get());
+    }
+
+    public function testDifferentSubclassesResolveToDifferentInstances(): void
+    {
+        $this->assertNotSame(SingletonTestSubjectA::get(), SingletonTestSubjectB::get());
     }
 }

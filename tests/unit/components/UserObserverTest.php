@@ -15,55 +15,73 @@
  * @license http://www.gnu.org/licenses/agpl-3.0.html The GNU Affero General Public License V3.0
  */
 
-namespace OEModule\CSDClient\tests\unit\components;
-
-use OEModule\CSDClient\components\UserObserver;
-use OEModule\CSDClient\components\CSDClient\CSDClient;
+namespace OEModule\mehstaffdb\tests\unit\components;
 
 class UserObserverTest extends \OEDbTestCase
 {
-    public $fixtures = [
-        "user" => \User::class,
-    ];
-
     /** @var \CDbTransaction */
     private $transaction;
-    /** @var CSD */
-    private $api;
 
-    /*public function testClassCanBeFound()
-    {
-        $api = \Yii::app()->moduleAPI->get("CSDClient");
-        $this->assertInstanceOf(UserObserver::class, $api);
-    }*/
-
-    public function setUp()
+    protected function setUp(): void
     {
         $this->transaction = \Yii::app()->db->beginTransaction();
         parent::setUp();
     }
 
-    public function tearDown()
+    protected function tearDown(): void
     {
         parent::tearDown();
         $this->transaction->rollback();
     }
 
-
-    /** @test */
-    public function testUpdateUser()
+    /**
+     * Invokes one of UserObserver's private methods for the purpose of testing.
+     *
+     * @param mixed ...$args
+     * @return mixed
+     */
+    private function invokePrivate(\UserObserver $observer, string $method, ...$args)
     {
-        $this->api = \Yii::app()->moduleAPI->get("CSDClient");
-        $this->api = $this->getMockBuilder(UserObserver::class)
-            ->setMethods(["getCSDClient"])
-            ->getMock();
-        $mockCSDClient = $this->getMockBuilder(CSDClient::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-        $mockCSDClient->method("getUserData")->willReturn(json_encode(["hello" => "world"]));
-        $this->api->method("getCSDClient")->willReturn($mockCSDClient);
+        $reflection = new \ReflectionMethod(\UserObserver::class, $method);
+        $reflection->setAccessible(true);
+        return $reflection->invoke($observer, ...$args);
+    }
 
-        //$mock_user = $this->user("user1");
-        //$this->assertEquals($this->api->updateUser($mock_user), $mock_user);
+    public function testGetDoctorGradeFromJobTitleMapsKnownRoles(): void
+    {
+        $observer = new \UserObserver();
+
+        $this->assertSame(1, $this->invokePrivate($observer, "getDoctorGradeFromJobTitle", "Consultant"));
+        $this->assertSame(4, $this->invokePrivate($observer, "getDoctorGradeFromJobTitle", "Fellow"));
+        $this->assertSame(22, $this->invokePrivate($observer, "getDoctorGradeFromJobTitle", "Optometrist"));
+    }
+
+    public function testGetDoctorGradeFromJobTitleMatchesOnSubstring(): void
+    {
+        $observer = new \UserObserver();
+
+        // The lookup matches when the mapped description appears anywhere in the title.
+        $this->assertSame(1, $this->invokePrivate($observer, "getDoctorGradeFromJobTitle", "Locum Consultant"));
+    }
+
+    public function testGetDoctorGradeFromJobTitleDefaultsToOther(): void
+    {
+        $observer = new \UserObserver();
+
+        // 33 is the documented "Other" fallback for an unrecognised job title.
+        $this->assertSame(33, $this->invokePrivate($observer, "getDoctorGradeFromJobTitle", "Completely Unknown Title"));
+    }
+
+    public function testUpdateUserSkipsUsersListedAsLocal(): void
+    {
+        \Yii::app()->params["local_users"] = ["localadmin"];
+
+        $observer = $this->getMockBuilder(\UserObserver::class)
+            ->onlyMethods(["getCSDClient"])
+            ->getMock();
+        // A local user must short-circuit before any CSD lookup is attempted.
+        $observer->expects($this->never())->method("getCSDClient");
+
+        $this->assertNull($observer->updateUser(["username" => "localadmin"]));
     }
 }
