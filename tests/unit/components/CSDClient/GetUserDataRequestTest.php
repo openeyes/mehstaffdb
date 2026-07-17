@@ -15,31 +15,49 @@
  * @license http://www.gnu.org/licenses/agpl-3.0.html The GNU Affero General Public License V3.0
  */
 
-namespace OEModule\CSDClient\tests\unit\components\CSDClient;
+namespace OEModule\mehstaffdb\tests\unit\components\CSDClient;
+
+use OEModule\mehstaffdb\components\CSDClient\GetUserDataRequest;
 
 class GetUserDataRequestTest extends \CTestCase
 {
-    /**
-     * @return GetUserDataRequest
-     */
-    private function getInstance()
+    protected function setUp(): void
     {
-        //\Yii::app()->params["pre_assessment_api_base_url"] = "http://example.com";
-        return new GetUserDataRequest(CSDClient::get());
+        parent::setUp();
+        // Request::__construct() reads these from the application params and
+        // throws when any of them is empty, so they must be populated first.
+        \Yii::app()->params["csd_api_key"] = "test-api-key";
+        \Yii::app()->params["csd_api_url"] = "http://example.com";
+        \Yii::app()->params["csd_api_timeout"] = "30";
     }
 
-    /** @test */
-    public function testGetActionName()
+    private function getInstance(): GetUserDataRequest
     {
-        $this->assertEquals("CSDAPI/api/staff?DomainUsername=WILLIAMSS",
+        return new GetUserDataRequest();
+    }
+
+    public function testGetActionNameBuildsTheStaffLookupPath(): void
+    {
+        $this->assertEquals(
+            "CSDAPI/api/staff?DomainUsername=WILLIAMSS",
             $this->getInstance()
                 ->setUsername("WILLIAMSS")
-                ->getActionName());
+                ->getActionName()
+        );
     }
 
-    /** @test */
-    public function testGetTimeout()
+    public function testGetTimeoutReturnsTheConfiguredValueAsInt(): void
     {
-        $this->assertIsNumeric($this->getInstance()->getTimeout());
+        $this->assertSame(30, $this->getInstance()->getTimeout());
+    }
+
+    public function testConstructorThrowsWhenARequiredSettingIsMissing(): void
+    {
+        \Yii::app()->params["csd_api_url"] = "";
+
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage("csd_api_url not set");
+
+        new GetUserDataRequest();
     }
 }
